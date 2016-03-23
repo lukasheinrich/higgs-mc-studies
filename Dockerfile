@@ -1,4 +1,4 @@
-FROM lukasheinrich/madgraph-pythia-delphes
+FROM lukasheinrich/higgs-mc-studies-base
 RUN yum install -y nano
 RUN curl -s https://bootstrap.pypa.io/get-pip.py | python
 RUN pip install click pyyaml
