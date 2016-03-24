@@ -1,0 +1,8 @@
+import {PROC}
+output {OUTPUT}
+madgraphrun
+launch -n output
+{RUN}
+{PARAM}
+set nevents {NEVENTS}
+quit
