@@ -8,8 +8,8 @@ python:
   - '2.7'
 
 install:
-  - docker build -t lukasheinrich/higgs-mc-studies-base base
-  - docker build -t lukasheinrich/higgs-mc-studies .
+  - docker build -t lukasheinrich/higgs-mc-studies-base base &> build_base.log
+  - docker build -t lukasheinrich/higgs-mc-studies . &> build.log
 
 script:
   - docker run -it -v $(pwd)/output:/workdir lukasheinrich/higgs-mc-studies ./scripts/setupgrid.sh testCards/test_param.dat /workdir/grid.tar.gz
