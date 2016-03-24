@@ -7,7 +7,8 @@ runnable within docker:
     
     
     alias indocker='docker run -it -v yadageworkdir:/workdir lukasheinrich/higgs-mc-studies'
-    indocker ./scripts/setupgrid.sh testCards/test_param.dat /workdir/grid.tar.gz
+    indocker ./paramfromyaml.py --madgraph HC_UFO -i '{kHzz: 0.5, kAzz: 0.5, kHww: 0.3, kAww: 0.3}' /workdir/param.dat
+    indocker ./scripts/setupgrid.sh /workdir/param.dat /workdir/grid.tar.gz
     indocker ./scripts/rungrid.sh /workdir/grid.tar.gz 1000 1234 /workdir/output.lhe
     indocker /analysis/pythia_main/example_main /analysis/mainPythiaMLM.cmnd /workdir output.hepmc /workdir/output.lhe
     indocker DelphesHepMC /analysis/template_cards/modified_delphes_card_ATLAS.tcl /workdir/output.root /workdir/output.hepmc
