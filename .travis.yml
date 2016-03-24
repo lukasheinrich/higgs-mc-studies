@@ -8,8 +8,8 @@ python:
   - '2.7'
 
 install:
-  - docker build -t lukasheinrich/higgs-mc-studies-base base &> build_base.log
-  - docker build -t lukasheinrich/higgs-mc-studies . &> build.log
+  - docker build -t lukasheinrich/higgs-mc-studies-base base | awk '{if(NR%100==0)print NR,"'"$(date)"'::: ",$0}' 
+  - docker build -t lukasheinrich/higgs-mc-studies . &> build.log | awk '{if(NR%100==0)print NR,"'"$(date)"'::: ",$0}'
 
 script:
   - docker run -it -v $(pwd)/output:/workdir lukasheinrich/higgs-mc-studies ./scripts/setupgrid.sh testCards/test_param.dat /workdir/grid.tar.gz
