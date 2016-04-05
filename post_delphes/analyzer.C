@@ -784,12 +784,12 @@ void AnalyseEvents(ExRootTreeReader *treeReader, myOutputs *plots, Cuts* cuts)
             
             plots->pT_Hjj = (plots->dijet4v + plots->h4v).Pt();
             
-            plots->ZeppetaZZ = plots->h4v.Eta() - ((plots->jet4v[2].Eta()+plots->jet4v[1].Eta())/2.);
+            plots->ZeppetaZZ = plots->h4v.Eta() - ((plots->jet4v[1].Eta()+plots->jet4v[0].Eta())/2.);
         }
         
         if(plots->Njets > 2)
         {
-            plots->Zeppetaj3 = plots->jet4v[2].Eta() - ((plots->jet4v[2].Eta()+plots->jet4v[1].Eta())/2.);
+            plots->Zeppetaj3 = plots->jet4v[2].Eta() - ((plots->jet4v[1].Eta()+plots->jet4v[0].Eta())/2.);
         }
         
         //------------------------------------
@@ -850,7 +850,6 @@ void analyzer(TString inFileName, TString outFileName)
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-
 
 
 
