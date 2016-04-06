@@ -167,12 +167,12 @@ void set_cuts(Cuts& current_cuts)
     current_cuts.jet.max_eta_forwardjet = 4.5;
     if(DEBUG) cout << "Cuts on jets are defined" << endl;
     
-    current_cuts.Z1.min_mass = 50;
+    current_cuts.Z1.min_mass = 0;
     current_cuts.Z1.max_mass = 106;
     current_cuts.Z1.minPTlep1 = 20;
     current_cuts.Z1.minPTlep2 = 15;
     if(DEBUG) cout << "Cuts on Z1 are defined" << endl;
-    current_cuts.Z2.min_mass = 12;
+    current_cuts.Z2.min_mass = 0;
     current_cuts.Z2.max_mass = 115;
     current_cuts.Z2.minPTlep1 = 10;
     current_cuts.Z2.minPTlep2 = -1; //Will accept anything for the last lepton !
