@@ -358,13 +358,13 @@ module Isolation ElectronIsolation {
 
   set UsePTSum true
 
-  set DeltaRMax 0.5
+  set DeltaRMax 0.2
 
   set PTMin 0.5
 
   set PTRatioMax 0.5
 
-  set PTSumMax 20
+  set PTSumMax 5
 }
 
 #################
@@ -396,13 +396,13 @@ module Isolation MuonIsolation {
 
   set UsePTSum true
 
-  set DeltaRMax 0.5
+  set DeltaRMax 0.2
 
   set PTMin 0.5
 
   set PTRatioMax 0.5
 
-  set PTSumMax 20
+  set PTSumMax 5
 }
 
 ###################
@@ -626,4 +626,3 @@ module TreeWriter TreeWriter {
   add Branch MissingET/momentum MissingET MissingET
   add Branch ScalarHT/energy ScalarHT ScalarHT
 }
-
