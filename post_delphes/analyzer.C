@@ -36,7 +36,7 @@ using namespace std;
 
 
 
-#define DEBUG false
+#define DEBUG true
 #define MZ_PDG 91.1876
 #define MEL_PDG 5.10998928e-04
 #define MMU_PDG 0.1134289267
@@ -167,12 +167,12 @@ void set_cuts(Cuts& current_cuts)
     current_cuts.jet.max_eta_forwardjet = 4.5;
     if(DEBUG) cout << "Cuts on jets are defined" << endl;
     
-    current_cuts.Z1.min_mass = 0;
+    current_cuts.Z1.min_mass = 50;
     current_cuts.Z1.max_mass = 106;
     current_cuts.Z1.minPTlep1 = 20;
     current_cuts.Z1.minPTlep2 = 15;
     if(DEBUG) cout << "Cuts on Z1 are defined" << endl;
-    current_cuts.Z2.min_mass = 0;
+    current_cuts.Z2.min_mass = 12;
     current_cuts.Z2.max_mass = 115;
     current_cuts.Z2.minPTlep1 = 10;
     current_cuts.Z2.minPTlep2 = -1; //Will accept anything for the last lepton !
@@ -510,71 +510,112 @@ void overlap_removal(vector<Jet*>& vecjet, vector<Electron*>& vecel, vector<Muon
 
 
 
+template<typename T> vector< pair<int,int> > build_allCandPairs(vector<T*>& veclep)
+{
+    if(DEBUG) cout << "Begin build_allCandPairs function" << endl;
+    vector< pair<int,int> > resCandPairs;
+    
+    for(size_t id1 = 0 ; id1 < veclep.size() ; id1++)
+        for(size_t id2 = id1+1 ; id2 < veclep.size() ; id2++)
+            if(veclep.at(id1)->Charge * veclep.at(id2)->Charge < 0) resCandPairs.push_back( make_pair<int, int> (id1, id2) );
+    
+    return resCandPairs;
+    if(DEBUG) cout << "End build_allCandPairs function" << endl;
+}
+
+
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+
+
+
+template<typename T> int build_best_z(vector<T*>& veclep, double& bestMZtest, vector< pair<int, int> >& pair_candidates, double currentLepMass)
+{
+    if(DEBUG) cout << "Begin build_best_z function " << pair_candidates.size() << endl;
+    int found_better_z = -9999;
+    TLorentzVector leps[2];
+    for(auto id : {0,1}) leps[id].SetPtEtaPhiM(0,0,0,0);
+    
+    for(int id_pair = 0 ; id_pair < pair_candidates.size() ; ++id_pair)
+    {
+        if(DEBUG) cout << __FILE__ << " " << __LINE__ << endl;
+        int idlep[2] = {pair_candidates.at(id_pair).first, pair_candidates.at(id_pair).second};
+        if(DEBUG) cout << __FILE__ << " " << __LINE__ << " " << idlep[0] << " " << idlep[1] << " " << veclep.size() << endl;
+        for(auto id : {0,1}) leps[id].SetPtEtaPhiM(veclep.at(idlep[id])->PT, veclep.at(idlep[id])->Eta, veclep.at(idlep[id])->Phi, currentLepMass);
+        if(DEBUG) cout << __FILE__ << " " << __LINE__ << endl;
+        
+        TLorentzVector currentz = leps[0]+leps[1];
+        double currenttestmz = fabs(currentz.M() - MZ_PDG);
+        if(DEBUG) cout << __FILE__ << " " << __LINE__ << " " << currenttestmz << " " << bestMZtest << endl;
+        
+        if(currenttestmz < bestMZtest) {
+            bestMZtest = currenttestmz;
+            found_better_z = id_pair;
+        }
+        if(DEBUG) cout << __FILE__ << " " << __LINE__ << endl;
+    }
+    
+    if(DEBUG) cout << "End build_best_z function " << found_better_z << endl;
+    return found_better_z;
+}
+
+
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+
+
+
 vector<int> pair_leptons_into_Zs(vector<Electron*>& electrons, vector<Muon*>& muons, vector<TLorentzVector>& out_lep4v)
 {
     if(DEBUG) cout << "Begin pair_leptons_into_Zs function" << endl;
     
+    vector< pair<int,int> > elPairCandidates = build_allCandPairs<Electron> (electrons);
+    vector< pair<int,int> > muPairCandidates = build_allCandPairs<Muon> (muons);
+    
     out_lep4v = vector<TLorentzVector> (4, TLorentzVector(0,0,0,0));
     vector<int> list_leptons(4, -1);
-    double bestMZtest = 9999*1000;
     
     for(int id_Z = 0 ; id_Z < 2 ; id_Z++) //Find on leading/subleading Z mass
     {
-        //Find the best electrons pairs
-        int id1 = 0, id2 = 0;
-        for(vector<Electron*>::iterator first_electron = electrons.begin() ; first_electron != electrons.end() ; ++first_electron)
-        {
-            vector<Electron*>::iterator el_i = electrons.begin(), el_e = electrons.end();
-            
-            for(vector<Electron*>::iterator second_electron = find(el_i, el_e, *first_electron) ; second_electron != el_e ; ++second_electron)
-            {
-                if(*first_electron == *second_electron) continue; //Pass the first second electron
-                if( (id_Z != 0)&&( (id1 == list_leptons.at(0))&&(id2 == list_leptons.at(1)) ) ) continue; //Pass the electrons attached to the first Z when building the second
-                if( (*first_electron)->Charge * (*second_electron)->Charge > 0) continue; //Pass the same-sign pairs
-                
-                out_lep4v[0+id_Z*2].SetPtEtaPhiM( (*first_electron)->PT, (*first_electron)->Eta, (*first_electron)->Phi, MEL_PDG );
-                out_lep4v[1+id_Z*2].SetPtEtaPhiM( (*second_electron)->PT, (*second_electron)->Eta, (*second_electron)->Phi, MEL_PDG );
-                
-                double currentMZtest = fabs( (out_lep4v[0+id_Z*2]+out_lep4v[1+id_Z*2]).M() - MZ_PDG);
-                if(currentMZtest < bestMZtest) {
-                    list_leptons.at(0+id_Z*2) = id1;
-                    list_leptons.at(1+id_Z*2) = id2;
-                }
-                
-                id2++;
-            }
-            
-            id2 = 0;
-            id1++;
-        }
+        double bestMZtest = 9999*1000;
+        if(DEBUG) cout << __FILE__ << " " << __LINE__ << endl;
+        int best_elpair = build_best_z<Electron>(electrons, bestMZtest, elPairCandidates, MEL_PDG);
+        double currentMZtest = 9999*1000;
+        int best_mupair = build_best_z<Muon>(muons, currentMZtest, muPairCandidates, MMU_PDG);
+        if(DEBUG) cout << __FILE__ << " " << __LINE__ << endl;
         
-        //Find the best muons pairs
-        id1 = 100, id2 = 100;
-        for(vector<Muon*>::iterator first_muon = muons.begin() ; first_muon != muons.end() ; ++first_muon)
+        bool ismu = (currentMZtest < bestMZtest);
+        if(ismu) bestMZtest = currentMZtest;
+        int best_pair = (ismu) ? best_mupair : best_elpair;
+        
+        if(best_pair == -9999) return list_leptons;
+        
+        vector< pair<int,int> > *pairCandidates = (ismu) ? &muPairCandidates : &elPairCandidates;
+        if(DEBUG) cout << __FILE__ << " " << __LINE__ << " " << best_pair << " " << pairCandidates->size() << endl;
+        
+        list_leptons[0+2*id_Z] = pairCandidates->at(best_pair).first + (100*ismu);
+        list_leptons[1+2*id_Z] = pairCandidates->at(best_pair).second + (100*ismu);
+        pairCandidates->erase(pairCandidates->begin() + best_pair);
+        if(DEBUG) cout << __FILE__ << " " << __LINE__ << endl;
+        
+        if(ismu)
         {
-            vector<Muon*>::iterator mu_i = muons.begin(), mu_e = muons.end();
-            
-            for(vector<Muon*>::iterator second_muon = find(mu_i, mu_e, *first_muon) ; second_muon != mu_e ; ++second_muon)
-            {
-                if(*first_muon == *second_muon) continue; //Pass the first second muon
-                if( (id_Z != 0)&&( (id1 == list_leptons.at(0))&&(id2 == list_leptons.at(1)) ) ) continue; //Pass the muons attached to the first Z when building the second
-                if( (*first_muon)->Charge * (*second_muon)->Charge > 0) continue; //Pass the same-sign pairs
-                
-                out_lep4v[0+id_Z*2].SetPtEtaPhiM( (*first_muon)->PT, (*first_muon)->Eta, (*first_muon)->Phi, MMU_PDG );
-                out_lep4v[1+id_Z*2].SetPtEtaPhiM( (*second_muon)->PT, (*second_muon)->Eta, (*second_muon)->Phi, MMU_PDG );
-                
-                double currentMZtest = fabs( (out_lep4v[0+id_Z*2]+out_lep4v[1+id_Z*2]).M() - MZ_PDG);
-                if(currentMZtest < bestMZtest) {
-                    list_leptons.at(0+id_Z*2) = id1;
-                    list_leptons.at(1+id_Z*2) = id2;
-                }
-                
-                id2++;
+            for(auto id : {0,1}) {
+                int current_lep_id = list_leptons[id+2*id_Z]-100;
+                out_lep4v[id+2*id_Z].SetPtEtaPhiM( muons[current_lep_id]->PT, muons[current_lep_id]->Eta, muons[current_lep_id]->Phi, MMU_PDG );
             }
-            
-            id2 = 100;
-            id1++;
+        } else
+        {
+            for(auto id : {0,1}) {
+                int current_lep_id = list_leptons[id+2*id_Z];
+                out_lep4v[id+2*id_Z].SetPtEtaPhiM( electrons[current_lep_id]->PT, electrons[current_lep_id]->Eta, electrons[current_lep_id]->Phi, MEL_PDG );
+            }
         }
+        if(DEBUG) cout << __FILE__ << " " << __LINE__ << endl;
     }
     
     if(DEBUG) cout << "End pair_leptons_into_Zs function" << endl;
@@ -739,6 +780,26 @@ void AnalyseEvents(ExRootTreeReader *treeReader, myOutputs *plots, Cuts* cuts)
         if(plots->z4v.back().E() < 0) continue;
         do_cutflow(plots, "MZ2");
         
+        int cutptl3 = 0, cutptl2 = 0, cutptl1 = 0;
+        for(int id = 0 ; id < 4 ; id++) {
+            if(plots->lepton4v.at(id).Pt() > cuts->Z2.minPTlep1) cutptl3++;
+            else continue;
+            
+            if(plots->lepton4v.at(id).Pt() > cuts->Z1.minPTlep2) cutptl2++;
+            else continue;
+            
+            if(plots->lepton4v.at(id).Pt() > cuts->Z1.minPTlep1) cutptl1++;
+        }
+        
+        if(cutptl1 < 1) continue;
+        do_cutflow(plots, "PTl1");
+        
+        if(cutptl2 < 2) continue;
+        do_cutflow(plots, "PTl2");
+        
+        if(cutptl1 < 3) continue;
+        do_cutflow(plots, "PTl3");
+        
         //---------------------------------------------
         // Fill some variables !
         
@@ -850,6 +911,7 @@ void analyzer(TString inFileName, TString outFileName)
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
+
 
 
 
