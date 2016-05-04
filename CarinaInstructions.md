@@ -9,9 +9,11 @@
     export PACKTIVITY_WORKDIR_LOCATION="/workdirbase:$(docker volume inspect -f '{{.Mountpoint}}' workdirbase)"
 
 3) Pull Yadage:
-    docker pull lukasheinrich/yadage
+ 
+     docker pull lukasheinrich/yadage
 
 4) Start yadage container:
+ 
     docker run -it -v /var/run/docker.sock:/var/run/docker.sock -e PACKTIVITY_WORKDIR_LOCATION=$PACKTIVITY_WORKDIR_LOCATION -e PACKTIVITY_WITHIN_DOCKER=true -v workdirbase:/workdirbase lukasheinrich/yadage bash
 
 -----
