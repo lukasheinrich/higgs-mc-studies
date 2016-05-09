@@ -21,10 +21,12 @@
 5) Within the container, setup the workflow parameters:
 
     $> cat << EOF > init.yml
-    > par1: 0.3
-    > par2: 0.5
+    > kAzz: 0.3
+    > kAww: 0.3
+    > kHzz: 0.5
+    > kHww: 0.5
     > nevents: 1000
-    > seeds: [12,34]
+    > seeds: [12,34,56]
     > EOF
 
 6) make the workdirectory for this set of pars:
