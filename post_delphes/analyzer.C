@@ -153,12 +153,12 @@ void set_cuts(Cuts& current_cuts)
     if(DEBUG) cout << "Begin set_cuts function" << endl;
     current_cuts.electron.min_pt = 7;
     current_cuts.electron.max_eta = 2.47;
-    current_cuts.electron.max_iso = 0.1;
+    current_cuts.electron.max_iso = 5;
     if(DEBUG) cout << "Cuts on electrons are defined" << endl;
     
     current_cuts.muon.min_pt = 6;
     current_cuts.muon.max_eta = 2.7;
-    current_cuts.muon.max_iso = 0.1;
+    current_cuts.muon.max_iso = 5;
     if(DEBUG) cout << "Cuts on muons are defined" << endl;
     
     current_cuts.jet.min_pt_centraljet = 25;
@@ -380,27 +380,46 @@ void WriteOutputFile(TString outfilename, myOutputs *plots)
 
 
 
-template<typename T> void select_leptons( vector<T*> *veclep, cut_on_leptons& cutlep )
+template<class T> void select_leptons( vector<T*>& veclep, cut_on_leptons& cutlep )
 {
     if(DEBUG) cout << "Begin select_leptons function" << endl;
     
+    int init_nb_lep = veclep.size();
     while (true)
     {
-        auto lep_i = veclep->begin(), lep_e = veclep->end();
+        auto lep_i = veclep.begin();
+        auto lep_e = veclep.end();
         
         for( ; lep_i != lep_e ; ++lep_i)
         {
-            if( ( (*lep_i)->PT > cutlep.min_pt )&&( fabs((*lep_i)->Eta) < cutlep.max_eta ) ) continue;
-            if( (*lep_i)->IsolationVar > cutlep.max_iso ) continue;
+            bool acceptance_cut = ( (*lep_i)->PT > cutlep.min_pt )&&( fabs((*lep_i)->Eta) < cutlep.max_eta );
+            bool isolation_cut = ( (*lep_i)->SumPt < cutlep.max_iso );
             
-            veclep->erase(lep_i);
+            if( acceptance_cut && isolation_cut ) {
+                if (DEBUG) {
+                    cout << "New lep " << (*lep_i)->SumPt << " " << (*lep_i)->PT << " " << (*lep_i)->Eta << " ";
+                }
+                continue;
+            }
+            
+            veclep.erase(lep_i);
+            if(DEBUG) cout << " - Erased one lepton ! - ";
+            
             break;
         }
         
         if(lep_i == lep_e) break;
     }
     
-    if(DEBUG) cout << "End select_leptons function" << endl;
+    if(DEBUG) {
+        cout << "End select_leptons function " << init_nb_lep << " " << veclep.size();
+        auto lep_i = veclep.begin(), lep_e = veclep.end();
+        
+        for( ; lep_i != lep_e ; ++lep_i) {
+                if((*lep_i)->PT < 6) cout << endl << " --- Low pT lep --- " << cutlep.min_pt << " " << cutlep.max_eta << " " << (*lep_i)->PT << " " << (*lep_i)->Eta << " ";
+        }
+        cout << endl;
+    }
 }
 
 
@@ -597,9 +616,32 @@ vector<int> pair_leptons_into_Zs(vector<Electron*>& electrons, vector<Muon*>& mu
         vector< pair<int,int> > *pairCandidates = (ismu) ? &muPairCandidates : &elPairCandidates;
         if(DEBUG) cout << __FILE__ << " " << __LINE__ << " " << best_pair << " " << pairCandidates->size() << endl;
         
-        list_leptons[0+2*id_Z] = pairCandidates->at(best_pair).first + (100*ismu);
-        list_leptons[1+2*id_Z] = pairCandidates->at(best_pair).second + (100*ismu);
+        int firstlep = pairCandidates->at(best_pair).first;
+        int secondlep = pairCandidates->at(best_pair).second;
+        list_leptons[0+2*id_Z] = firstlep + (100*ismu);
+        list_leptons[1+2*id_Z] = secondlep + (100*ismu);
         pairCandidates->erase(pairCandidates->begin() + best_pair);
+        if(DEBUG) cout << __FILE__ << " " << __LINE__ << endl;
+        
+        if(id_Z == 0)
+        {
+            while(true)
+            {
+                size_t idpair = 0, nbpairs = pairCandidates->size();
+                
+                for( ; idpair < nbpairs ; ++idpair)
+                {
+                    bool test = (pairCandidates->at(idpair).first == firstlep)||(pairCandidates->at(idpair).first == secondlep)||(pairCandidates->at(idpair).second == firstlep)||(pairCandidates->at(idpair).second == secondlep);
+                    
+                    if(test) {
+                        pairCandidates->erase(pairCandidates->begin() + idpair);
+                        break;
+                    }
+                }
+                
+                if(idpair == nbpairs) break;
+            }
+        }
         if(DEBUG) cout << __FILE__ << " " << __LINE__ << endl;
         
         if(ismu)
@@ -741,8 +783,8 @@ void AnalyseEvents(ExRootTreeReader *treeReader, myOutputs *plots, Cuts* cuts)
         
         //---------------------------------------------
         // Apply PT and Eta cuts on leptons
-        select_leptons<Electron> (&electrons, cuts->electron);
-        select_leptons<Muon> (&muons, cuts->muon);
+        select_leptons<Electron> (electrons, cuts->electron);
+        select_leptons<Muon> (muons, cuts->muon);
         plots->fNbLeptonAfterKinSel->Fill(electrons.size() + muons.size());
         if( (electrons.size() + muons.size()) < 4 ) continue;
         do_cutflow(plots, "Kin. Sel.");
@@ -797,7 +839,7 @@ void AnalyseEvents(ExRootTreeReader *treeReader, myOutputs *plots, Cuts* cuts)
         if(cutptl2 < 2) continue;
         do_cutflow(plots, "PTl2");
         
-        if(cutptl1 < 3) continue;
+        if(cutptl3 < 3) continue;
         do_cutflow(plots, "PTl3");
         
         //---------------------------------------------
