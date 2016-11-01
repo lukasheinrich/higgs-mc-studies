@@ -1,3 +1,4 @@
+
 ! main89mlm.cmnd
 
 ! Specify statistics parameters.
@@ -10,20 +11,26 @@ Beams:frameType             = 4
 !SpaceShower:alphaSvalue   = 0.118
 !TimeShower:alphaSvalue    = 0.118
 
+Tune:pp = 5
+! PDF:useLHAPDF = on
+! PDF:LHAPDFset = CT10.LHgrid
+! PDF:pSet                  = LHAPDF5:CT10.LHgrid
+MultipartonInteractions:bProfile = 4
+MultipartonInteractions:a1 = 0.10
+MultipartonInteractions:pT0Ref = 1.70
+MultipartonInteractions:ecmPow = 0.16
+!BeamRemnants:reconnectRange = 4.67
+SpaceShower:rapidityOrder=0
+
 ! Specify jet matching parameters for MLM
 ! Note: Some of these settings might be read directly from the input LHE file.
-JetMatching:merge            = on
-JetMatching:scheme           = 1
+! JetMatching:scheme           = 1
 JetMatching:setMad           = on
-JetMatching:qCut             = 10.0
-JetMatching:coneRadius       = 1.0
-JetMatching:etaJetMax        = 10.0
-JetMatching:nJetMax          = 2
+
 
 ! Be more forgiving with momentum mismatches.
 Check:epTolErr               = 1e-2
 
-! Subruns for MLM jet matching
+
 LHEFInputs:nSubruns       = 1
 Main:subrun               = 0
-
