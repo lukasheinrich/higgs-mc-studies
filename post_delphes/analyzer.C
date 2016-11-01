@@ -161,7 +161,7 @@ void set_cuts(Cuts& current_cuts)
     current_cuts.muon.max_iso = 5;
     if(DEBUG) cout << "Cuts on muons are defined" << endl;
 
-    current_cuts.jet.min_pt_centraljet = 25;
+    current_cuts.jet.min_pt_centraljet = 30;
     current_cuts.jet.min_pt_forwardjet = 30;
     current_cuts.jet.max_eta_centraljet = 2.4;
     current_cuts.jet.max_eta_forwardjet = 4.5;
