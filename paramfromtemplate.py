@@ -10,6 +10,7 @@ import importlib
 @click.command()
 @click.option('-i','--inyaml')
 @click.option('-f','--fileyaml')
+@click.option('-p', '--prefactor', default=1, help='Prefactor for the couplings')
 @click.argument('template')
 @click.argument('outfile')
 def paramfromyaml(inyaml,fileyaml,template,outfile):
@@ -24,8 +25,8 @@ def paramfromyaml(inyaml,fileyaml,template,outfile):
     
     outfilename = outfile
 
-
-    pardata = {'value_'+k:v for k,v in pardata.iteritems()}
+    
+    pardata = {'value_'+k:prefactor*v for k,v in pardata.iteritems()}
     formatted = open(template).read().format(**pardata)
 
     outputfile = sys.stdout if outfile == '-' else open(outfile,'w')
